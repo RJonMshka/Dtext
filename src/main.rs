@@ -1,37 +1,14 @@
 use std::env;
-use std::io::{self, Read};
-use crossterm::terminal::enable_raw_mode;
-use crossterm::terminal::disable_raw_mode;
+mod editor;
+use editor::Editor;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    enable_raw_mode().unwrap();
-    for b in io::stdin().bytes() {
-        // let b = b.unwrap();
-        // let c = b as char;
-        // if c.is_control() {
-        //     println!("Binary: {0:08b} ASCII: {0:#03} \r", b);
-        // } else {
-        //     println!("Binary: {0:08b} ASCII: {0:#03} Character: {1:#?}\r", b, c);
-        // }
-        // if c == 'q' {
-        //     disable_raw_mode().unwrap();
-        //     break;
-        // }
-        match b {
-            Ok(b) => {
-                let c = b as char;
-                if c.is_control() {
-                    println!("Binary: {0:08b} ASCII: {0:#03} \r", b);
-                } else {
-                    println!("Binary: {0:08b} ASCII: {0:#03} Character: {1:#?}\r", b, c);
-                }
-                if c == 'q' {
-                    break;
-                }
-            }
-            Err(err) => println!("Error: {}", err)
-        }
-    }
-    disable_raw_mode().unwrap();
+    // default is a static method, that is how we use static
+    // method to get a new Editor
+    let editor = Editor::default();
+
+    // same as calling
+    // Editor::run(&editor);
+    editor.run();
 }
