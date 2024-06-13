@@ -2,9 +2,7 @@ use crossterm::event::{read, Event::Key, KeyCode::Char};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 // defining the construct: empty rn
-pub struct Editor {
-
-}
+pub struct Editor {}
 
 // implementation for the construct
 impl Editor {
@@ -16,8 +14,40 @@ impl Editor {
 
     // &self is referencing the struct from context, Editor in this case
     pub fn run(&self) {
-        enable_raw_mode().unwrap();
-        // for b in io::stdin().bytes() {
+        // top level error handler
+        if let Err(err) = self.repl() {
+            // panic! is a macro which basically crashes our program cleanly
+            panic!("{err:#?}");
+        }
+        print!("Goodbye.\r\n");
+    }
+
+    // This function will return either a pink Ok box with nothing in it, or a black Err box with a std::io::Error in it
+    fn repl(&self) -> Result<(), std::io::Error> {
+
+        // It unwraps the Result of enable_raw_mode for us. 
+        // If it's an error, it returns the error immediately. If not, it continues.
+        enable_raw_mode()?;
+
+        loop {
+            if let Key(event) = read()? {
+                println!("{event:?} \r");
+
+                if let Char(c) = event.code {
+                    if c == 'q' {
+                         break;
+                     }
+                }
+            }
+        }
+
+        disable_raw_mode()?;
+        Ok(())
+    }
+}
+
+
+// for b in io::stdin().bytes() {
         //     match b {
         //         Ok(b) => {
         //             let c = b as char;
@@ -33,22 +63,3 @@ impl Editor {
         //         Err(err) => println!("Error: {}", err)
         //     }
         // }
-
-        loop {
-            match read() {
-                Ok(Key(event)) => {
-                    println!("{event:?} \r");
-
-                    if let Char(c) = event.code {
-                        if c == 'q' {
-                             break;
-                         }
-                    }
-                },
-                Err(err) => println!("Error: {err}"),
-                _ => (),
-            }
-        }
-        disable_raw_mode().unwrap();
-    }
-}
