@@ -15,7 +15,7 @@ impl Editor {
         Editor{}
     }
 
-    // &self is referencing the struct from conext, Editor in this case
+    // &self is referencing the struct from context, Editor in this case
     pub fn run(&self) {
         enable_raw_mode().unwrap();
         // for b in io::stdin().bytes() {

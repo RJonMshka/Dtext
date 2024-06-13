@@ -1,3 +1,6 @@
+#![warn(clippy::all, clippy::pedantic)]
+// the above directive activate warnings for two categories "all" and "pedantic" in clippy
+
 use std::env;
 mod editor;
 use editor::Editor;
