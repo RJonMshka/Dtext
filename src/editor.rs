@@ -1,4 +1,3 @@
-use std::io::{self, Read};
 use crossterm::event::{read, Event::Key, KeyCode::Char};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
@@ -38,7 +37,7 @@ impl Editor {
         loop {
             match read() {
                 Ok(Key(event)) => {
-                    println!("{:?} \r", event);
+                    println!("{event:?} \r");
 
                     match event.code {
                         Char(c) => {
@@ -49,7 +48,7 @@ impl Editor {
                         _ => (),
                     }
                 },
-                Err(err) => println!("Error: {}", err),
+                Err(err) => println!("Error: {err}"),
                 _ => (),
             }
         }
