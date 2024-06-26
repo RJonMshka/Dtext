@@ -1,19 +1,22 @@
-use crossterm::event::{read, Event::Key, KeyCode::Char};
+use crossterm::event::{read, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 // defining the construct: empty rn
-pub struct Editor {}
+pub struct Editor {
+    should_quit: bool,
+}
 
 // implementation for the construct
 impl Editor {
     
     // Self means its own type: Editor
     pub fn default() -> Self {
-        Editor{}
+        Editor{ should_quit: false }
     }
 
     // &self is referencing the struct from context, Editor in this case
-    pub fn run(&self) {
+    // &mut as now run changes the Editor its called upon.
+    pub fn run(&mut self) {
         // top level error handler
         if let Err(err) = self.repl() {
             // panic! is a macro which basically crashes our program cleanly
@@ -23,21 +26,28 @@ impl Editor {
     }
 
     // This function will return either a pink Ok box with nothing in it, or a black Err box with a std::io::Error in it
-    fn repl(&self) -> Result<(), std::io::Error> {
+    fn repl(&mut self) -> Result<(), std::io::Error> {
 
         // It unwraps the Result of enable_raw_mode for us. 
         // If it's an error, it returns the error immediately. If not, it continues.
         enable_raw_mode()?;
 
         loop {
-            if let Key(event) = read()? {
-                println!("{event:?} \r");
+            if let Key(KeyEvent {
+                code, modifiers, kind, state
+            }) = read()? {
+                println!("Code: {code:?} Modifiers: {modifiers:?} Kind: {kind:?} State: {state:?} \r");
 
-                if let Char(c) = event.code {
-                    if c == 'q' {
-                         break;
-                     }
+                match code {
+                    Char('q') if modifiers == KeyModifiers::CONTROL => {
+                        self.should_quit = true;
+                        println!("yes this is control");
+                    },
+                    _ => (),
                 }
+            }
+            if self.should_quit {
+                break;
             }
         }
 
