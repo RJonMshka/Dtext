@@ -1,5 +1,7 @@
-use crossterm::event::{read, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers};
-use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
+use crossterm::event::{read, Event, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers};
+use crossterm::execute;
+use crossterm::terminal::{enable_raw_mode, disable_raw_mode, Clear, ClearType};
+use std::io::stdout;
 
 // defining the construct: empty rn
 pub struct Editor {
@@ -17,12 +19,25 @@ impl Editor {
     // &self is referencing the struct from context, Editor in this case
     // &mut as now run changes the Editor its called upon.
     pub fn run(&mut self) {
-        // top level error handler
-        if let Err(err) = self.repl() {
-            // panic! is a macro which basically crashes our program cleanly
-            panic!("{err:#?}");
-        }
-        print!("Goodbye.\r\n");
+        Self::initialize().unwrap();
+        let result = self.repl();
+        Self::terminate().unwrap();
+        result.unwrap();
+    }
+
+    fn initialize() -> Result<(), std::io::Error> {
+        enable_raw_mode()?;
+        Self::clear_screen()
+    }
+
+    fn terminate() -> Result<(), std::io::Error> {
+        disable_raw_mode()
+    }
+
+    fn clear_screen() -> Result<(), std::io::Error> {
+        let mut stdout = stdout();
+        // execute! means that we want to write out immediately and not wait for the buffer to be filled until it's written out.
+        execute!(stdout, Clear(ClearType::All))
     }
 
     // This function will return either a pink Ok box with nothing in it, or a black Err box with a std::io::Error in it
@@ -33,55 +48,35 @@ impl Editor {
         enable_raw_mode()?;
 
         loop {
-            if let Key(KeyEvent {
-                code, modifiers, kind, state
-            }) = read()? {
-                println!("Code: {code:?} Modifiers: {modifiers:?} Kind: {kind:?} State: {state:?} \r");
-
-                match code {
-                    Char('q') if modifiers == KeyModifiers::CONTROL => {
-                        self.should_quit = true;
-                        println!("yes this is control");
-                        // The print! macro in Rust lets us send data directly to the terminal.
-                        // \x1b, the escape character, or 27 in decimal.
-                        // \x signifies that what follows should be read as a hexadecimal number.
-                        // 1b translates to 27 in decimal 
-                        // The remaining part, [2J, forms part of an escape sequence
-
-                        // For a deeper dive into the magic of terminal commands, explore the VT100 escape: 
-                        // https://en.wikipedia.org/wiki/VT100
-
-                        // https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
-
-                        // print!("\x1b[2J");
-                    },
-                    _ => (),
-                }
-            }
+            let event = read()?;
+            self.evaluate_event(&event);
+            self.refresh_screen()?;
             if self.should_quit {
                 break;
             }
         }
+        Ok(())
+    }
 
-        disable_raw_mode()?;
+    fn evaluate_event(&mut self, event: &Event) {
+        if let Key(KeyEvent {
+            code, modifiers, ..
+        }) = event {
+            match code {
+                // dereferencing with * as event is an address
+                Char('q') if *modifiers == KeyModifiers::CONTROL => {
+                    self.should_quit = true;
+                },
+                _ => (),
+            }
+        }
+    }
+
+    fn refresh_screen(&self) -> Result<(), std::io::Error> {
+        if self.should_quit {
+            Self::clear_screen()?;
+            print!("Goodbye.\r\n");
+        }
         Ok(())
     }
 }
-
-
-// for b in io::stdin().bytes() {
-        //     match b {
-        //         Ok(b) => {
-        //             let c = b as char;
-        //             if c.is_control() {
-        //                 println!("Binary: {0:08b} ASCII: {0:#03} \r", b);
-        //             } else {
-        //                 println!("Binary: {0:08b} ASCII: {0:#03} Character: {1:#?}\r", b, c);
-        //             }
-        //             if c == 'q' {
-        //                 break;
-        //             }
-        //         }
-        //         Err(err) => println!("Error: {}", err)
-        //     }
-        // }
